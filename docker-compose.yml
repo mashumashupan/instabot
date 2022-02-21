@@ -1,0 +1,17 @@
+version: '3.9'
+services:
+  instabot:
+    image: instabot
+    build: 
+      context: ./
+    tty: true
+    stdin_open: true
+    user: 1000:1000
+    working_dir: /home/appuser/app
+    volumes:
+      - .:/home/appuser/app:rw
+    environment:
+      # Pythonがコンテナ内に.pycファイルを生成しないようにします
+      PYTHONDONTWRITEBYTECODE: 1
+      # コンテナのロギングを容易にするためにバッファリングをオフにします
+      PYTHONUNBUFFERED: 1
