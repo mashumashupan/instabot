@@ -80,7 +80,7 @@ def main():
 
     # instagramにアクセス
     global driver
-    driver = webdriver.Chrome("./chromedriver.exe")
+    driver = webdriver.Chrome('./chromedriver')
     driver.get("https://www.instagram.com/accounts/login/")
 
     # Waiterインスタンス生成
