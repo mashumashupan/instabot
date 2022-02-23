@@ -1,17 +1,18 @@
-#各モジュールを構成（なければcmdでpip install *** でインストール）
+# 各モジュールを構成（なければcmdでpip install *** でインストール）
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC 
+from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.keys import Keys
 import urllib.parse
 import time
 import waiter as wt
 
-userName = 'haru__pppp'#'takatorea'
-password = 'demain2049'#'d79HsZ/LXH,ype,'
+userName = 'haru__pppp'  # 'takatorea'
+password = 'demain2049'  # 'd79HsZ/LXH,ype,'
 driver: webdriver
 waiter: wt.Waiter
+
 
 def loadText(fileName: str) -> [str]:
     # ファイルをオープンする
@@ -19,15 +20,18 @@ def loadText(fileName: str) -> [str]:
 
     # 行ごとにすべて読み込んでリストデータにする
     rivals = rivalsText.readlines()
-    
+
     # ファイルをクローズする
     rivalsText.close()
 
     return rivals
 
+
 """
 ログイン処理
 """
+
+
 def login(id: str, pw: str):
     # ログインID
     idInputName = 'username'
@@ -43,22 +47,28 @@ def login(id: str, pw: str):
     passwordInput.send_keys(Keys.ENTER)
 
     # ポップアップの後でを選択
-    elem_search_word = waiter.wait(By.XPATH, '//div[@role="dialog"]//button[contains(text(), "後で")]').click()
+    elem_search_word = waiter.wait(
+        By.XPATH, '//div[@role="dialog"]//button[contains(text(), "後で")]').click()
     driver.implicitly_wait(2)
     return
+
 
 """
 指定回数分いいねしつづける
 """
+
+
 def repeatedlyLikes(count: int = 200):
     # いいねしつづける
-    likecount = 0 # カウントリセットで0代入
-    while (likecount < count): # count回ループする
+    likecount = 0  # カウントリセットで0代入
+    while (likecount < count):  # count回ループする
         driver.implicitly_wait(4)
         # いいねボタン取得
-        heart = waiter.wait(By.XPATH, '//div[@role="dialog"]/article/div[2]/section//button[*[name()="svg" and contains(@aria-label, "いいね")]]')
+        heart = waiter.wait(
+            By.XPATH, '//div[@role="dialog"]/article/div[2]/section//button[*[name()="svg" and contains(@aria-label, "いいね")]]')
         # いいね済み判定
-        isDone = '取り消す' in heart.find_element_by_xpath('*[name()="svg"]').get_attribute('aria-label')
+        isDone = '取り消す' in heart.find_element_by_xpath(
+            '*[name()="svg"]').get_attribute('aria-label')
         if not isDone:
             # いいね済みでなければクリック
             heart.click()
@@ -67,8 +77,10 @@ def repeatedlyLikes(count: int = 200):
             print("いいね")
             print(likecount)
         # 次ボタンをクリック
-        elem_search_word = driver.find_element_by_css_selector("a.coreSpriteRightPaginationArrow").click()
-    print ("200いいね!")
+        elem_search_word = driver.find_element_by_css_selector(
+            "a.coreSpriteRightPaginationArrow").click()
+    print("200いいね!")
+
 
 def main():
     """
@@ -80,7 +92,7 @@ def main():
 
     # instagramにアクセス
     global driver
-    driver = webdriver.Chrome('./chromedriver')
+    driver = webdriver.Chrome('/opt/chrome/chromedriver')
     driver.get("https://www.instagram.com/accounts/login/")
 
     # Waiterインスタンス生成
@@ -94,17 +106,22 @@ def main():
     driver.get(rivalsList[0])
 
     # フォロワーを表示
-    waiter.wait(By.XPATH, '//main//header//section//a[contains(text(), "フォロワー")]').click()
-    waiter.wait(By.XPATH, '//div[@role="dialog"]//ul//li//div[@role="button"]/a')
+    waiter.wait(
+        By.XPATH, '//main//header//section//a[contains(text(), "フォロワー")]').click()
+    waiter.wait(
+        By.XPATH, '//div[@role="dialog"]//ul//li//div[@role="button"]/a')
     while (True):
-        top = driver.execute_script("return document.querySelector('.isgrP').scrollTop")
+        top = driver.execute_script(
+            "return document.querySelector('.isgrP').scrollTop")
         print(top)
-        height = driver.execute_script("return document.querySelector('.isgrP').scrollHeight")
+        height = driver.execute_script(
+            "return document.querySelector('.isgrP').scrollHeight")
         print(height)
         if(top == height):
             break
         else:
-            driver.execute_script("document.querySelector('.isgrP').scrollTop = document.querySelector('.isgrP').scrollHeight")
+            driver.execute_script(
+                "document.querySelector('.isgrP').scrollTop = document.querySelector('.isgrP').scrollHeight")
     # フォロワーをリストで取得
     # rivalFollowers = waiter.wait(By.XPATH, '//div[@role="dialog"]//ul//li//div[@role="button"]/a/@href')
 
@@ -115,6 +132,7 @@ def main():
 
     # いいねする
     # repeatedlyLikes(3)
+
 
 if __name__ == '__main__':
     main()
