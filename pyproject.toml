@@ -6,7 +6,9 @@ authors = ["Your Name <you@example.com>"]
 
 [tool.poetry.dependencies]
 python = "^3.10"
-selenium = "^4.1.0"
+chromedriver-binary = "98.*"
+pyppeteer = "^1.0.2"
+websockets = "^10.2"
 
 [tool.poetry.dev-dependencies]
 autopep8 = "^1.6.0"
