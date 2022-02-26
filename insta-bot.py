@@ -1,56 +1,73 @@
 # 各モジュールを構成（なければcmdでpip install *** でインストール）
-from selenium import webdriver
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.common.keys import Keys
-import urllib.parse
-import time
-import waiter as wt
+import asyncio
+from cmath import exp
+from concurrent.futures import process
+from random import Random
+import sys
+from pyppeteer import launch
+from pyppeteer.page import Page
 
-userName = 'haru__pppp'  # 'takatorea'
-password = 'demain2049'  # 'd79HsZ/LXH,ype,'
-driver: webdriver
-waiter: wt.Waiter
+userName = 'ischca'  # 'takatorea'
+password = 'iamkuiiru'  # 'd79HsZ/LXH,ype,'
+tagName = '春から大学生'
+
+rand = Random()
 
 
-def loadText(fileName: str) -> [str]:
-    # ファイルをオープンする
-    rivalsText = open(fileName)
+async def waitRandom():
+    delay = rand.randint(3, 12)
+    await asyncio.sleep(delay)
 
-    # 行ごとにすべて読み込んでリストデータにする
-    rivals = rivalsText.readlines()
 
-    # ファイルをクローズする
-    rivalsText.close()
+async def select(page: Page, selector: str):
+    await page.waitForSelector(selector)
+    return await page.J(selector)
 
-    return rivals
 
+async def selectx(page: Page, selector: str):
+    await page.waitForXPath(selector)
+    return await page.Jx(selector)
 
 """
 ログイン処理
 """
 
 
-def login(id: str, pw: str):
+async def login(page: Page):
+    print('ログイン中')
     # ログインID
     idInputName = 'username'
-    userNameInput = waiter.wait(By.NAME, idInputName)
     # ログインID入力
-    userNameInput.send_keys(id)
+    await (await select(page, f'[name={idInputName}]')).type(userName)
 
     # パスワード
     passInputName = 'password'
-    passwordInput = waiter.wait(By.NAME, passInputName)
     # パスワード入力
-    passwordInput.send_keys(pw)
-    passwordInput.send_keys(Keys.ENTER)
+    await (await select(page, f'[name={passInputName}]')).type(password)
 
-    # ポップアップの後でを選択
-    elem_search_word = waiter.wait(
-        By.XPATH, '//div[@role="dialog"]//button[contains(text(), "後で")]').click()
-    driver.implicitly_wait(2)
-    return
+    submit = await select(page, 'button[type=submit]')
+    # ログインボタンクリック
+    await submit.click()
+
+    # 後での画面を待つ
+    try:
+        await page.waitForSelector('.coreSpriteKeyhole')
+    except:
+        # ログイン失敗の場合
+        alert = await page.J('#slfErrorAlert')
+        message = await page.evaluate('(e) => e.innerText', alert)
+        print(message, file=sys.stderr)
+        return False
+
+    return True
+
+
+async def goToPage(page: Page, url: str):
+    # 指定ページへ遷移する
+    return await asyncio.gather(
+        page.goto(url),
+        page.waitForNavigation()
+    )
 
 
 """
@@ -58,81 +75,55 @@ def login(id: str, pw: str):
 """
 
 
-def repeatedlyLikes(count: int = 200):
+async def repeatedlyLikes(page: Page, count: int = 200):
+    print('いいね開始')
     # いいねしつづける
     likecount = 0  # カウントリセットで0代入
     while (likecount < count):  # count回ループする
-        driver.implicitly_wait(4)
         # いいねボタン取得
-        heart = waiter.wait(
-            By.XPATH, '//div[@role="dialog"]/article/div[2]/section//button[*[name()="svg" and contains(@aria-label, "いいね")]]')
+        heart = (await selectx(page,
+                               '//div[@role="dialog"]//article//section//button/div/span/*[name()="svg" and contains(@aria-label, "いいね")]'))[0]
+        ariaLabel = str(await page.evaluate('(e) => e.ariaLabel', heart))
         # いいね済み判定
-        isDone = '取り消す' in heart.find_element_by_xpath(
-            '*[name()="svg"]').get_attribute('aria-label')
+        isDone = '取り消す' in ariaLabel
         if not isDone:
             # いいね済みでなければクリック
-            heart.click()
+            await heart.click()
             likecount += 1
             # いいねした数を表示
             print("いいね")
             print(likecount)
+        await waitRandom()
         # 次ボタンをクリック
-        elem_search_word = driver.find_element_by_css_selector(
-            "a.coreSpriteRightPaginationArrow").click()
-    print("200いいね!")
+        next = await selectx(page, '//div[@role="presentation"]//button//*[name()="svg" and contains(@aria-label, "次へ")]')
+        await next[0].click()
+    print('いいね終了')
 
 
-def main():
-    """
-    ここからは自動アクションになります。
-    """
-
-    # ライバル一覧を読み込む
-    rivalsList = loadText('rivals.txt')
-
+async def main():
     # instagramにアクセス
-    global driver
-    driver = webdriver.Chrome('/opt/chrome/chromedriver')
-    driver.get("https://www.instagram.com/accounts/login/")
-
-    # Waiterインスタンス生成
-    global waiter
-    waiter = wt.Waiter(driver)
+    browser = await launch(args=['--no-sandbox', '--lang=ja-JP'])
+    page = await browser.newPage()
+    await goToPage(page, 'https://www.instagram.com/accounts/login/')
 
     # ログイン
-    login(userName, password)
+    if await login(page):
+        print('ログイン完了')
+    else:
+        print('ログイン失敗', file=sys.stderr)
+        return
 
-    # 検索窓をアドレスバーに直接入力今回は「photo」にした
-    driver.get(rivalsList[0])
+    # タグページへ遷移
+    await goToPage(page, f'https://www.instagram.com/explore/tags/{tagName}/')
+    print(f'#{tagName}を検索')
 
-    # フォロワーを表示
-    waiter.wait(
-        By.XPATH, '//main//header//section//a[contains(text(), "フォロワー")]').click()
-    waiter.wait(
-        By.XPATH, '//div[@role="dialog"]//ul//li//div[@role="button"]/a')
-    while (True):
-        top = driver.execute_script(
-            "return document.querySelector('.isgrP').scrollTop")
-        print(top)
-        height = driver.execute_script(
-            "return document.querySelector('.isgrP').scrollHeight")
-        print(height)
-        if(top == height):
-            break
-        else:
-            driver.execute_script(
-                "document.querySelector('.isgrP').scrollTop = document.querySelector('.isgrP').scrollHeight")
-    # フォロワーをリストで取得
-    # rivalFollowers = waiter.wait(By.XPATH, '//div[@role="dialog"]//ul//li//div[@role="button"]/a/@href')
-
-    # print(rivalFollowers)
-
-    # 一つ目の投稿をクリック
-    #waiter.wait(By.XPATH, "//article/div[1]/div[1]/div[1]/div[1]/div[1]/a").click()
+    # 最新の一つ目の投稿をクリック
+    await (await selectx(page, '//article/h2/following-sibling::div[1]/div[1]/div[1]/div[1]/a[1]'))[0].click()
+    print('投稿を表示')
 
     # いいねする
-    # repeatedlyLikes(3)
+    await repeatedlyLikes(page, 200)
 
 
 if __name__ == '__main__':
-    main()
+    asyncio.get_event_loop().run_until_complete(main())
